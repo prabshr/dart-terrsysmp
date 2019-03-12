@@ -19,4 +19,7 @@ ncl compute_error_statistics.ncl ind_aM=1 'varname="swx_pfl"' nz=10
 ncl compute_error_statistics.ncl ind_aM=2 'varname="swx_pfl"' nz=10
 ncl compute_error_statistics.ncl ind_aM=3 'varname="swx_pfl"' nz=10
 
+mkdir nc_stat_data 
+mv *.nc nc_stat_data
+mv nc_stat_data ../
 exit 0

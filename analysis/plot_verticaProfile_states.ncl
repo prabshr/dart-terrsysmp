@@ -18,20 +18,29 @@ begin
 ;USER SETTINGS
 ;------------------------------------------------------------------------------
 
- diri       = "../stat_data/"
+ diri       = "../nc_stat_data/"
 
- fils       = (/"WCDA_cos_","WCDA_clm_","WCDA_pfl_","OL_run_"/)
- color      = (/"red","green","steel blue","grey37","black"/)
+ fils       = (/"WCDA_cos_","WCDA_clm_","WCDA_pfl_","OL_"/)
+ color      = (/"red","green","steel blue","magenta","black"/)  ;1+color for OBS 
  labels     = (/"WCDA_cos", "WCDA_clm","WCDA_pfl","OL","OBS"/)
  varname    = "ens"  ; Variable to extract from the files
- filsfx     = "qvx_cos" 
+ filsfxs    = (/"theta","qvx_cos","swx_pfl", "tso_clm"/)
+ ;; var_id  = 0
+
+ filsfx     = filsfxs(var_id)
+
+ ;Default, unless specified 
+ offset    = 0.;
+ scale     = 1.
  
 if (filsfx.eq."tso_clm") then
-   xyString   = (/"[K]", "HGT [m]"/)
+   xyString   = (/"[degrees C]", "HGT [m]"/)
    time       = (/3,  9, 15, 21/)
    tloc       = (/0,  2,  4, 6/)
-   trX       = (/295.,310./)
-   trY       = (/0., 0.15/)
+   trX       = (/8.,25./)
+   trY       = (/0., 2.5/)
+   offset    = 273.15;
+   scale     = 1.
    freverse  = True
  end if
 
@@ -40,7 +49,7 @@ if (filsfx.eq."tso_clm") then
    tloc =   (/1, 3,  5, 7/)
    xyString = (/"~F33~q~F21~~B~v~N~ [K]", "HGT [m]"/)
    trX       = (/310.,316./)
-   trY       = (/0., 1000./)
+   trY       = (/0., 4000./)
    freverse  = False
  end if
 
@@ -48,8 +57,8 @@ if (filsfx.eq."tso_clm") then
    time =   (/3, 9, 15, 21/)
    tloc =   (/1, 3,  5, 7/)
    xyString = (/"~F33~q~F21~~N~ [K]", "HGT [m]"/)
-   trX       = (/310.,316./)
-   trY       = (/0., 1000./)
+   trX       = (/264.,273./)
+   trY       = (/0., 3000./)
    freverse  = False
  end if
 
@@ -57,8 +66,8 @@ if (filsfx.eq."tso_clm") then
    time =   (/3, 9, 15, 21/)
    tloc =   (/1, 3,  5, 7/)
    xyString = (/"QV [g/kg]", "HGT [m]"/)
-   trX       = (/0.007,0.009/)
-   trY       = (/0., 1000./)
+   trX       = (/2.0,5.0/)
+   trY       = (/0., 3000./)
    freverse  = False
  end if
 
@@ -66,8 +75,8 @@ if (filsfx.eq."tso_clm") then
    time      = (/3,9, 15, 21/)
    tloc      = (/1, 3,  5, 7/)
    xyString  = (/"S~B~w~N~ [-]", "Depth [m]"/)
-   trX       = (/0.10,0.16/)
-   trY       = (/0, 0.15/)
+   trX       = (/0.1,0.31/)
+   trY       = (/0, 2.5/)
    freverse  = True
  end if
 ;------------------------------------------------------------------------------
@@ -100,6 +109,15 @@ if (filsfx.eq."tso_clm") then
  var_03       = dim_sum_n(stat_03,0)/ndim_ic
  var_04       = dim_sum_n(stat_04,0)/ndim_ic
  var_05       = dim_sum_n(stat_05,0)/ndim_ic
+
+ ;--------------------
+ ;Rescale variablee
+ ;--------------------
+ var_01       = var_01*scale - offset
+ var_02       = var_02*scale - offset
+ var_03       = var_03*scale - offset
+ var_04       = var_04*scale - offset
+ var_05       = var_05*scale - offset
 
  ;------------------------
  ;PLOT
@@ -155,7 +173,7 @@ if (filsfx.eq."tso_clm") then
  ;xy  Resources
  ;------------------------
  res@xyLineColor                         = "black"
- res@xyLineThicknessF                    = 2.
+ res@xyLineThicknessF                    = 3.
  res@xyMarkLineMode                      = "MarkLines"
  
  do ip = 0, nplot-1 
@@ -195,7 +213,7 @@ if (filsfx.eq."tso_clm") then
  end do
  
  resP                       = True
- resP@txString              = varname 
+ resP@txString              = filsfxs(var_id)
  resP@gsnFrame              = False  
  gsn_panel(wks,plot,(/2,2/),resP)    
 

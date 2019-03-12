@@ -21,6 +21,7 @@
 load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_code.ncl"
 load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_csm.ncl"
 load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/contributed.ncl"
+load "../functions/debugmessage.ncl"
 
 begin
 
@@ -28,15 +29,18 @@ begin
 ;USER SETTINGS
 ;------------------------------------------------------------------------------
 
- path        = "../" ;Path of terrsysmp grouped NC files
+ path        = "../"
  assimMode   = (/"WCDA_cos","WCDA_clm","WCDA_pfl","OL"/)
  varnames    = (/"txx_cos", "qvx_cos", "tso_clm","swx_pfl", "qrn_cos"/)
- varstrings  = (/"T~B~a~N~ (K)" , "QV (g/kg)","Ts (K)"," S~B~w~N~ (-)", "Rain (mm)"/)
+ varstrings  = (/"T~B~a~N~ (C)" , "QV (g/kg)","Ts (C)"," S~B~w~N~ (-)", "Rain (mm)"/)
  scales      = (/1, 1000., 1, 1, 1/)
+ offsets     = (/273.15, 0., 273.15, 0., 0./)
+ trYMax      = (/48.0, 15.0, 50.0, 1.0, 170.0/)
+ trYMin      = (/-4.0,  0.0,  0.0, 0.0,   0.0/)
 
  pmID        = 9                    ; -1 if single PM run
- ind_aM      = 2                    ;select assimMode 
- ;; var_id      = 3 
+ ;ind_aM      = 2                    ;select assimMode 
+ ;var_id      = 3 
  fanomaly    = False                ;plot anomalies 
 
  icycle_start= 0 
@@ -55,15 +59,31 @@ begin
 
  nstat       = 2                    ;number of ensemble statistics
 
- pltyp           = "png"           
+ pltyp           = "x11"           
  ;pltyp@wkWidth   = 1024*2           ;Always needs to be square
  ;pltyp@wkHeight  = 1024*2
 
 ;------------------------------------------------------------------------------
 ;USER SETTINGS END, Do not change below
 ;------------------------------------------------------------------------------
+;
+;Debug Messages
+ print("Usage: ncl plot_ensemble_ts.ncl ind_aM=X var_id=X nmax=X")
+ dmsg = debugmessage("ind_aM :", assimMode)
+ print(" " + dmsg)
+ dmsg = debugmessage("var_id :", varnames)
+ print(" " + dmsg)
+ print("nmax <= 90")
+ if (.not.isdefined("ind_aM") .or. .not.isdefined("var_id") .or. .not.isdefined("nmax")) then
+   exit
+ end if
+;Debug Messages
+
+
+ nmaxcycle = min((/nmax,nmaxcycle/))
  ncycle    = nmaxcycle - icycle_start + 1 
  scale     = scales(var_id)
+ offset    = offsets(var_id)
  varname   = varnames(var_id)
  varstring = varstrings(var_id)
  
@@ -71,9 +91,8 @@ begin
  if (pmID.eq.-1) then
    sfx_pm    = "PM/../"
    sfx_pm    = "PM_run/perfectModel"
-   sfx_pm    = "OL/NC/rundart"
  else
-   sfx_pm    = sfx   
+   sfx_pm    = "OL/NC/rundart"   
  end if
 
  
@@ -85,10 +104,9 @@ begin
  ;
    if (pmID.eq.-1) then
      fname_pm = path + sfx_pm + sprinti("%0.2i",icycle+1)     ; perfect model
-     fname_pm = path + sfx_pm + sprinti("%0.2i",icycle+1) + "/tsmp_instance_9"
      tsmpF_pm = addfile(fname_pm + ".nc","r")
    else
-     fname_pm = fname(pmID) 
+     fname_pm = path + sfx_pm + sprinti("%0.2i",icycle+1) + "/tsmp_instance_" + sprinti("%0.1i",pmID) 
      tsmpF_pm = addfile(fname_pm + ".nc","r")
    end if
 
@@ -294,7 +312,7 @@ begin
  ;------------------------
  res@vpYF                                = 0.1
  res@vpWidthF                            = 0.9
- res@vpHeightF                           = 0.4
+ res@vpHeightF                           = 0.35
 
  ;xy Resources
  ;------------------------
@@ -305,14 +323,21 @@ begin
  ;tr Resources
  ;------------------------
  ;res@trXMaxF = 312.
+ res@trYMinF  = trYMin(var_id)
+ res@trYMaxF  = trYMax(var_id)
 
  do ip = 0, num_lev-1
-   y_data             = scale*(data_var(:,ip,ind_assim))
+   y_data             = scale*(data_var(:,0,ind_assim)) - offset
    x_data             = time_var(ind_assim)/ 24.0
 
    res@gsnRightString = hgt_mod@longname + " :" + sprintf("%4.0f",hgt_mod(ip)) + hgt_mod@units
-   if (ip.eq.1) then
-    res@tiYAxisString = ""
+   if (ip.eq.0) then
+     res@tiXAxisString = ""
+     ;res@tmXBLabelsOn    = False   ;This causes different sizes of plots
+   else
+     res@gsnLeftString = " "
+     res@tiXAxisString = "Time (Days)"
+     ;res@tmXBLabelsOn    = True
    end if
    plot(ip)           = gsn_csm_xy(wks,x_data, y_data,res)
    delete([/x_data, y_data/])
@@ -327,10 +352,10 @@ begin
 ; end if
 
  legend = create "Legend" legendClass wks 
-    "vpXF" : 0.65 
-    "vpYF" : 0.7 
-    "vpWidthF" : 0.2 
-    "vpHeightF" : 0.1 
+    "vpXF" : 0.67 
+    "vpYF" : 0.92
+    "vpWidthF" : 0.12 
+    "vpHeightF" : 0.08 
     "lgPerimOn" : False 
     "lgItemCount" : 3 
     "lgLabelFontHeightF" : 0.02 ;fncps_hgt 

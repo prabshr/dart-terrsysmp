@@ -10,7 +10,7 @@
 load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_code.ncl"
 load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_csm.ncl"
 load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/contributed.ncl"
-load "error_statistics.ncl"
+load "../functions/error_statistics.ncl"
 
 begin
 
@@ -18,13 +18,9 @@ begin
 ;USER SETTINGS
 ;------------------------------------------------------------------------------
  path      = "../"
- assimMode = (/"WCDA_cos","WCDA_clm","WCDA_pfl","OL_run"/)
-; ind_aM    = 3 ; Select the assimMode
-
- print(" ind_aM : " + assimMode)
- print("")
- print(" varname :" + "theta qvx_cos tso_clm swx_pfl")
-
+ assimMode = (/"WCDA_cos","WCDA_clm","WCDA_pfl","OL"/)
+;ind_aM    = 3 ; Select the assimMode
+ pmID    = 9    ;Ensemble member used for PM in OL experiment
 ; varname   = "thetaV"
 ; varname    = "theta" 
 ; varname   = "qvx_cos"
@@ -48,17 +44,31 @@ begin
 ;
 
 ; nz        = 10; 40; 10       ;do not use 10 for cosmo,domain extent in z, use 10 for LSM
- ncycle    = 13           ;Number of Restart Runs
-
+ ncycle    = 60           ;Number of Restart Runs
+ scycle    = 20           ;Start period 
 ;------------------------------------------------------------------------------
 ;USER SETTINGS END, DO NOT CHANGE BELOW
 ;------------------------------------------------------------------------------
 
+ print(" ------------ ")
+ print(" ind_aM : " + assimMode)
+ print("")
+ print(" varname :" + "theta qvx_cos tso_clm swx_pfl")
+ print(" ------------ ")
+ print( assimMode(ind_aM) + " " + varname + " pmID in OL " + pmID)
+ print("Exp Start: " + scycle + " Number of cycle: " + ncycle)
+ print(" ------------ ")
+
+
  ;Perfect Model run
-; sfx_pm    = "PM/CLUMA2_1.2.0MCT_clm-cos-pfl_idealRTD_perfectModel"
- sfx_pm    = "PM_run/perfectModel"
+ if (pmID.eq.-1) then
+   sfx_pm    = "PM_run/perfectModel"
+ else
+   sfx_pm     = "OL/NC/rundart" 
+ end if
+
  ;Ensemble runs
- sfx       = assimMode(ind_aM) + "/rundart"
+ sfx       = assimMode(ind_aM) + "/NC/rundart"
 
 ;------------------------------------------------------------------------------
 ;Big Loop, ncycle depends on model restarts, where assimilation is done
@@ -68,10 +78,23 @@ begin
    ;-------------
    ;Ensemble runs
    ;-------------
-   fname    = systemfunc("ls " + path + sfx + sprinti("%0.2i",icycle+1) +"/tsmp_instance*")
+   fname    = systemfunc("ls " + path + sfx + sprinti("%0.2i",icycle+scycle) +"/tsmp_instance*")
    nens     = dimsizes(fname)
 
-   do nf  = 0, nens-1                                  ;Ensemble Loop
+   if (pmID.ne.-1 .and. ind_aM.eq.3) then
+     em1 = ispan(0,pmID-1,1) 
+     em2 = ispan(pmID+1,nens-1,1)
+     em  = array_append_record (em1, em2, 0)
+     nens = nens-1
+   else
+     em  = ispan(0,nens-1,1)
+   end if
+
+   do nf  = 0,nens-1                                  ;Ensemble Loop
+
+     ;Need to correct the file name because ls does not sort it correctly
+     fname(nf) = path + sfx + sprinti("%0.2i",icycle+1) +"/tsmp_instance_" + sprinti("%0.1i",em(nf)) + ".nc"
+     ;print(nf + " " + fname(nf))
      tsmpF  = addfile(fname(nf)+".nc","r")
      if (nf.eq.0 .and. icycle.eq.0) then
        tempV   = tsmpF->txx_cos
@@ -123,7 +146,12 @@ begin
    ;------------- 
    ;Perfect Model
    ;-------------
-   fname_pm = path + sfx_pm + sprinti("%0.2i",icycle+1)  
+   if (pmID.eq.-1) then
+     fname_pm = path + sfx_pm + sprinti("%0.2i",icycle+1)
+   else
+     fname_pm = path + sfx_pm + sprinti("%0.2i",icycle+1) + "/tsmp_instance_" + sprinti("%0.1i",pmID)
+   end if
+
    tsmpF_pm = addfile(fname_pm + ".nc","r")
    
    var_obs = new((/ntime,nz/),"float")                    ;;(/ntime,nz/)

@@ -21,8 +21,8 @@ begin
 ;USER SETTINGS
 ;------------------------------------------------------------------------------
 
- diri      = "../stat_data_d100/"
- fils      = (/"WCDA_cos_","WCDA_clm_","WCDA_pfl_","OL_run_"/)
+ diri      = "../nc_stat_data/"
+ fils      = (/"WCDA_cos_","WCDA_clm_","WCDA_pfl_","OL_"/)
 
  color      = (/"red","green","steel blue","grey37"/)
  labels     = (/"WCDA_cos", "WCDA_clm","WCDA_pfl","OL"/)
@@ -36,7 +36,7 @@ begin
    xyString   = (/"[K]", "HGT [m]"/)
    time       = (/3, 6, 9, 12, 15, 18, 21, 24/)
    tloc       = time/3 - 1
-   trX       = (/0.2,1.5/)
+   trX       = (/0.2,3.5/)
    trY       = (/0, 1.0/)
    freverse  = True
  end if
@@ -54,7 +54,7 @@ begin
    time = (/0, 3, 6, 9, 12, 15, 18, 21/)
    tloc = time/3
    xyString = (/"~F33~q~F21~~N~ [K]", "HGT [m]"/)
-   trX       = (/0.1,1.0/)
+   trX       = (/4.,10.0/)
    trY       = (/0, 2000/)
    freverse  = False
  end if
@@ -72,7 +72,7 @@ begin
    time      = (/0, 3, 6, 9, 12, 15, 18, 21/)
    tloc = time/3
    xyString  = (/"S~B~w~N~ [-]", "Depth [m]"/)
-   trX       = (/1.E-3,0.10/)
+   trX       = (/1.E-4,0.10/)
    trY       = (/0, 1.0/)
    freverse  = True
  end if
