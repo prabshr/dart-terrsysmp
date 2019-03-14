@@ -27,7 +27,7 @@ begin
  color      = (/"red","green","steel blue","grey37"/)
  labels     = (/"WCDA_cos", "WCDA_clm","WCDA_pfl","OL"/)
  varname    = "MAE"  ; Variable to extract from the files
- filsfxs    = (/"theta","qvx_cos","swx_pfl", "tso_clm"/)
+ filsfxs    = (/"theta_cos","qvx_cos","swx_pfl", "tso_clm"/)
  ;; var_id  = 0
 
  filsfx     = filsfxs(var_id)
@@ -50,7 +50,7 @@ begin
    freverse  = False
  end if
 
- if (filsfx.eq."theta") then
+ if (filsfx.eq."theta_cos") then
    time = (/0, 3, 6, 9, 12, 15, 18, 21/)
    tloc = time/3
    xyString = (/"~F33~q~F21~~N~ [K]", "HGT [m]"/)
@@ -150,9 +150,9 @@ begin
  res@trYMaxF     = trY(1)
  res@trYMinF     = trY(0)
  res@trYReverse  = freverse
- res@trXMaxF     = trX(1)
- res@trXMinF     = trX(0)
- res@trXLog      = True
+ ;res@trXMaxF     = trX(1)
+ ;res@trXMinF     = trX(0)
+ ;res@trXLog      = True
  
  ;xy Resources
  ;------------------------

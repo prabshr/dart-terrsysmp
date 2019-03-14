@@ -1,0 +1,43 @@
+#!/bin/ksh
+
+username=$USER
+
+for iaM in {0..3} #{0..14}   #BIG LOOP
+do
+jobname="nclerrorStat_"$iaM
+
+cat > $jobname << end_pbscommands_cluma2
+#!/bin/bash
+#################################################
+# PBS commands
+#################################################
+#PBS -N $jobname
+#PBS -l cput=1:00:00
+#PBS -l nodes=1:ppn=1
+#PBS -k oe
+#PBS -j oe
+#PBS -u $username
+#################################################
+end_pbscommands_cluma2
+
+cat >> $jobname << ncljob
+cd $HOME/dart-terrsysmp/readOutput
+ncl compute_error_statistics.ncl ind_aM=$iaM 'varname="theta_cos"' nz=40
+ncl compute_error_statistics.ncl ind_aM=$iaM 'varname="txx_cos"' nz=40
+ncl compute_error_statistics.ncl ind_aM=$iaM 'varname="qvx_cos"' nz=40
+ncl compute_error_statistics.ncl ind_aM=$iaM 'varname="tso_clm"' nz=10
+ncl compute_error_statistics.ncl ind_aM=$iaM 'varname="swx_pfl"' nz=10
+
+#mkdir nc_stat_data
+#mv *.nc nc_stat_data
+#mv nc_stat_data ../
+exit 0
+
+ncljob
+
+chmod u+x $jobname
+qsub $jobname
+
+done
+
+exit 0 

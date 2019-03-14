@@ -21,8 +21,9 @@ begin
  assimMode = (/"WCDA_cos","WCDA_clm","WCDA_pfl","OL"/)
 ;ind_aM    = 3 ; Select the assimMode
  pmID    = 9    ;Ensemble member used for PM in OL experiment
-; varname   = "thetaV"
-; varname    = "theta" 
+; varname   = "thetaV_cos"
+; varname    = "theta_cos" 
+; varname   = "txx_cos"
 ; varname   = "qvx_cos"
 ; varname   = "tso_clm"  
 ; varname   = "shf_clm"
@@ -44,8 +45,8 @@ begin
 ;
 
 ; nz        = 10; 40; 10       ;do not use 10 for cosmo,domain extent in z, use 10 for LSM
- ncycle    = 60           ;Number of Restart Runs
- scycle    = 20           ;Start period 
+ ncycle    = 70           ;Number of Restart Runs
+ scycle    = 19           ;Start period 
 ;------------------------------------------------------------------------------
 ;USER SETTINGS END, DO NOT CHANGE BELOW
 ;------------------------------------------------------------------------------
@@ -53,7 +54,7 @@ begin
  print(" ------------ ")
  print(" ind_aM : " + assimMode)
  print("")
- print(" varname :" + "theta qvx_cos tso_clm swx_pfl")
+ print(" varname :" + "theta_cos txx_cos qvx_cos tso_clm swx_pfl")
  print(" ------------ ")
  print( assimMode(ind_aM) + " " + varname + " pmID in OL " + pmID)
  print("Exp Start: " + scycle + " Number of cycle: " + ncycle)
@@ -100,11 +101,23 @@ begin
        tempV   = tsmpF->txx_cos
        hhl     = tsmpF->zxx_cos(0:nz-1,iys,ixs) -140.
        ndim    = dimsizes(tempV)
-       if (varname.eq."tso_clm") then
+
+       ; check which model component
+       tempstr = str_split(varname,"_")
+       if (tempstr(1).eq."cos") then
+         hhl     = tsmpF->zxx_cos(0:nz-1,iys,ixs) -140.
+       else
+         hhl     = (/ 0.01, 0.035, 0.075, 0.135, 0.235, 0.40, 0.65, 1.05, 1.65, 2.5/)
+       end if
+
+       ;clm does not print first time step
+       if (tempstr(1).eq."clm") then
          ntime = ndim(0)-1
        else
          ntime = ndim(0)
        end if
+
+       ;initialize variables
        var_ens  = new((/nens,ntime,nz/),"float")      ;(/nens,ntime,nz/)
        mae      = new((/ncycle,ntime,nz/),"float")
        mse      = new((/ncycle,ntime,nz/),"float")
@@ -126,13 +139,6 @@ begin
        temp_var  = toTHETA(Tin, Pin)              ;K
      else 
        temp_var = tsmpF->$(varname)$(:,0:nz-1,iys:iye,ixs:ixe)
-       if (varname.eq."qvx_cos") then
-          temp_var = temp_var*1000. ;g/kg
-       else
-          delete(hhl)
-          hhl      = (/ 0.01, 0.035, 0.075, 0.135, 0.235, 0.40, 0.65, 1.05, 1.65, 2.5/)
-       end if 
-     
      end if
      end if
      ;--------------------------------------
@@ -168,9 +174,6 @@ begin
      temp_var = toTHETA(Tin, Pin)
    else
      temp_var = tsmpF_pm->$(varname)$(:,0:nz-1,iys:iye,ixs:ixe)
-     if (varname.eq."qvx_cos") then
-       temp_var = temp_var*1000.   ;g/kg
-     end if
    end if
    end if
    ;--------------------------------------
