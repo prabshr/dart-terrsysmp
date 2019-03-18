@@ -201,8 +201,8 @@ begin
             else
              nowrain(nf,:,:) = tsmpF->$(varname)$(it,:,:) 
              nowrain_pm(nf,:,:) = tsmpF_pm->$(varname)$(it,:,:) 
-             data_var(nf,:,xt)             = dim_avg_n(dim_avg_n(nowrain(nf,iys:iye,ixs:ixe)-0.*oldrain(nf,iys:iye,ixs:ixe),1),0)
-             data_var(nens+nstat-1,:,xt)   = dim_avg_n(dim_avg_n(nowrain_pm(nf,iys:iye,ixs:ixe)-0.*oldrain_pm(nf,iys:iye,ixs:ixe),1),0)
+             data_var(nf,:,xt)             = dim_avg_n(dim_avg_n(nowrain(nf,iys:iye,ixs:ixe)-oldrain(nf,iys:iye,ixs:ixe),1),0)
+             data_var(nens+nstat-1,:,xt)   = dim_avg_n(dim_avg_n(nowrain_pm(nf,iys:iye,ixs:ixe)-oldrain_pm(nf,iys:iye,ixs:ixe),1),0)
              oldrain    = nowrain
              oldrain_pm = nowrain_pm 
             end if

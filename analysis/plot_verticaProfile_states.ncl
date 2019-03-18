@@ -24,7 +24,7 @@ begin
  color      = (/"red","green","steel blue","magenta","black"/)  ;1+color for OBS 
  labels     = (/"WCDA_cos", "WCDA_clm","WCDA_pfl","OL","OBS"/)
  varname    = "ens"  ; Variable to extract from the files
- filsfxs    = (/"theta_cos","qvx_cos","swx_pfl", "tso_clm"/)
+ filsfxs    = (/"txx_cos","qvx_cos","swx_pfl", "tso_clm"/)
  ;; var_id  = 0
 
  filsfx     = filsfxs(var_id)
@@ -53,11 +53,11 @@ if (filsfx.eq."tso_clm") then
    freverse  = False
  end if
 
- if (filsfx.eq."theta_cos") then
+ if (filsfx.eq."txx_cos") then
    time =   (/3, 9, 15, 21/)
    tloc =   (/1, 3,  5, 7/)
    xyString = (/"~F33~q~F21~~N~ [K]", "HGT [m]"/)
-   trX       = (/264.,273./)
+   trX       = (/240.,310./)
    trY       = (/0., 3000./)
    freverse  = False
  end if
@@ -166,8 +166,8 @@ if (filsfx.eq."tso_clm") then
  res@trYMaxF     = trY(1)
  res@trYMinF     = trY(0)
  res@trYReverse  = freverse
- ;res@trXMaxF     = trX(1) 
- ;res@trXMinF     = trX(0) 
+res@trXMaxF     = trX(1) 
+ res@trXMinF     = trX(0) 
 
 
  ;xy  Resources

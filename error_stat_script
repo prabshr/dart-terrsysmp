@@ -1,10 +1,12 @@
 #!/bin/ksh
 
 username=$USER
+prefx="nclerrorStat_"
+rm $prefx
 
 for iaM in {0..3} #{0..14}   #BIG LOOP
 do
-jobname="nclerrorStat_"$iaM
+jobname=$prefx$iaM
 
 cat > $jobname << end_pbscommands_cluma2
 #!/bin/bash

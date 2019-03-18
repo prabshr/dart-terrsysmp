@@ -4,6 +4,9 @@
 ; 
 ; Prabhakar Shrestha
 ; E-mail: pshrestha@uni-bonn.de
+; Flag
+; opt = 0 sprea/Error ratio
+; opt = 1 MAE
 ;=======================================================;
 load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_code.ncl"
 load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_csm.ncl"
@@ -153,7 +156,6 @@ begin
  time        = ispan(0,ntime-1,1)
  rat_xx      = new((/4,ntime/),"float")
 
- opt = 1
  rat_xx(0,:) = sprdError(sprd_01,mse_01,mae_01,alev,opt)
  rat_xx(1,:) = sprdError(sprd_02,mse_02,mae_02,alev,opt)
  rat_xx(2,:) = sprdError(sprd_03,mse_03,mae_03,alev,opt)

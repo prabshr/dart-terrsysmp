@@ -6,6 +6,9 @@
 ; CLM outputs will not have initial model output data, so one time step less
 ; Generates two netcdf outputs
 ; Prabhakar Shrestha
+; Flags
+; ind_aM    = 3 ; Select the assimMode
+; nz        = 10; 40; 10       ;do not use 10 for cosmo,domain extent in z, use 10 for LSM
 ;=======================================================;
 load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_code.ncl"
 load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_csm.ncl"
@@ -19,15 +22,7 @@ begin
 ;------------------------------------------------------------------------------
  path      = "../"
  assimMode = (/"WCDA_cos","WCDA_clm","WCDA_pfl","OL"/)
-;ind_aM    = 3 ; Select the assimMode
  pmID    = 9    ;Ensemble member used for PM in OL experiment
-; varname   = "thetaV_cos"
-; varname    = "theta_cos" 
-; varname   = "txx_cos"
-; varname   = "qvx_cos"
-; varname   = "tso_clm"  
-; varname   = "shf_clm"
-; varname   = "swx_pfl"
 
 ;Extents for spatial averaging (take the entire domain)
 ;-2*nbdl for COSMO, but entire domain for clm and parflow, readclm=1 runs
@@ -36,17 +31,11 @@ begin
  iys = 0 ;7 ;0 
  ixe = 23 ;12 ;23
  iye = 13 ;7 ;13
-;
-;check statistics for observed location only : i-11, j-4
-; ixs = 9 
-; iys = 2 
-; ixe = 13 
-; iye = 6
-;
 
-; nz        = 10; 40; 10       ;do not use 10 for cosmo,domain extent in z, use 10 for LSM
- ncycle    = 70           ;Number of Restart Runs
- scycle    = 19           ;Start period 
+ nMaxCycle = 90           ;default (do not change)
+ scycle    = 1            ;scycle>=1 Start day (rundart_scycle)
+ ecycle    = 90           ;ecycle<=nMaxCycle, End day (rundart_ecycle) 
+
 ;------------------------------------------------------------------------------
 ;USER SETTINGS END, DO NOT CHANGE BELOW
 ;------------------------------------------------------------------------------
@@ -57,7 +46,7 @@ begin
  print(" varname :" + "theta_cos txx_cos qvx_cos tso_clm swx_pfl")
  print(" ------------ ")
  print( assimMode(ind_aM) + " " + varname + " pmID in OL " + pmID)
- print("Exp Start: " + scycle + " Number of cycle: " + ncycle)
+ print("Exp Start: " + scycle + " Exp End: " + ecycle)
  print(" ------------ ")
 
 
@@ -74,12 +63,15 @@ begin
 ;------------------------------------------------------------------------------
 ;Big Loop, ncycle depends on model restarts, where assimilation is done
 ;------------------------------------------------------------------------------
- do icycle = 0, ncycle -1
- 
+ ncycle = min((/ecycle-scycle+1,nMaxCycle/))
+
+ do icycle = 0, ncycle -1         ;Big Loop
+
+   ocycle = icycle + scycle 
    ;-------------
    ;Ensemble runs
    ;-------------
-   fname    = systemfunc("ls " + path + sfx + sprinti("%0.2i",icycle+scycle) +"/tsmp_instance*")
+   fname    = systemfunc("ls " + path + sfx + sprinti("%0.2i",ocycle) +"/tsmp_instance*")
    nens     = dimsizes(fname)
 
    if (pmID.ne.-1 .and. ind_aM.eq.3) then
@@ -94,7 +86,7 @@ begin
    do nf  = 0,nens-1                                  ;Ensemble Loop
 
      ;Need to correct the file name because ls does not sort it correctly
-     fname(nf) = path + sfx + sprinti("%0.2i",icycle+1) +"/tsmp_instance_" + sprinti("%0.1i",em(nf)) + ".nc"
+     fname(nf) = path + sfx + sprinti("%0.2i",ocycle) +"/tsmp_instance_" + sprinti("%0.1i",em(nf)) + ".nc"
      ;print(nf + " " + fname(nf))
      tsmpF  = addfile(fname(nf)+".nc","r")
      if (nf.eq.0 .and. icycle.eq.0) then
@@ -126,13 +118,13 @@ begin
        stateobs = new((/ncycle,ntime,nz/),"float")
      end if
 
-     if (varname.eq."thetaV") then
+     if (varname.eq."thetaV_cos") then
        Tin    = tsmpF->txx_cos(:,0:nz-1,iys:iye,ixs:ixe) ;K
        QVin   = tsmpF->qvx_cos(:,0:nz-1,iys:iye,ixs:ixe) ;kg/kg
        Pin    = tsmpF->pxx_cos(:,0:nz-1,iys:iye,ixs:ixe) ;Pascal
        ;
        temp_var  = toTHETAV(Tin, QVin, Pin)              ;K
-     else if (varname.eq."theta") then
+     else if (varname.eq."theta_cos") then
        Tin    = tsmpF->txx_cos(:,0:nz-1,iys:iye,ixs:ixe) ;K
        Pin    = tsmpF->pxx_cos(:,0:nz-1,iys:iye,ixs:ixe) ;Pascal
        ;
@@ -153,21 +145,21 @@ begin
    ;Perfect Model
    ;-------------
    if (pmID.eq.-1) then
-     fname_pm = path + sfx_pm + sprinti("%0.2i",icycle+1)
+     fname_pm = path + sfx_pm + sprinti("%0.2i",ocycle)
    else
-     fname_pm = path + sfx_pm + sprinti("%0.2i",icycle+1) + "/tsmp_instance_" + sprinti("%0.1i",pmID)
+     fname_pm = path + sfx_pm + sprinti("%0.2i",ocycle) + "/tsmp_instance_" + sprinti("%0.1i",pmID)
    end if
 
    tsmpF_pm = addfile(fname_pm + ".nc","r")
    
    var_obs = new((/ntime,nz/),"float")                    ;;(/ntime,nz/)
  
-   if (varname.eq."thetaV") then
+   if (varname.eq."thetaV_cos") then
      Tin    = tsmpF_pm->txx_cos(:,0:nz-1,iys:iye,ixs:ixe)   ;K
      QVin   = tsmpF_pm->qvx_cos(:,0:nz-1,iys:iye,ixs:ixe)   ;kg/kg
      Pin    = tsmpF_pm->pxx_cos(:,0:nz-1,iys:iye,ixs:ixe)   ;Pascal
      temp_var = toTHETAV(Tin, QVin, Pin)                    ;K
-   else if (varname.eq."theta") then
+   else if (varname.eq."theta_cos") then
      Tin    = tsmpF_pm->txx_cos(:,0:nz-1,iys:iye,ixs:ixe)   ;K
      QVin   = tsmpF_pm->qvx_cos(:,0:nz-1,iys:iye,ixs:ixe)   ;kg/kg
      Pin    = tsmpF_pm->pxx_cos(:,0:nz-1,iys:iye,ixs:ixe)   ;Pascal
@@ -190,7 +182,7 @@ begin
    statevar(icycle,:,:) = dim_avg_n(var_ens,0)              ;Ensemble Average
    stateobs(icycle,:,:) = var_obs                           ;Observation
 
- end do
+ end do   ;Big Loop
 
 ;------------------------------------------------------------------------------
 ;First netcdf file output
