@@ -39,12 +39,7 @@ begin
  trYMin      = (/-4.0,  0.0,  0.0, 0.0,   0.0/)
 
  pmID        = 9                    ; -1 if single PM run
- ;ind_aM      = 2                    ;select assimMode 
- ;var_id      = 3 
  fanomaly    = False                ;plot anomalies 
-
- icycle_start= 0 
- nmaxcycle   = 90                  ;Number of restarts 
 
  ixs         = 11                  ;xdomain
  ixe         = 12                   ;xdomain
@@ -54,34 +49,31 @@ begin
  izz         = (/0,3/)            ;subsurface z-location
  nfreq       = 3                    ;model output frequency, hrs?
  pfreq       = 3                    ;plot frequency, hrs?
-
- num_lev     = dimsizes(izz)        ;dimsizes(iz),dimsizes(izz),1
-
  nstat       = 2                    ;number of ensemble statistics
 
+ nMaxCycle = 90           ;default (do not change)
+ scycle    = 1            ;scycle>=1 Start day (rundart_scycle)
+ ecycle    = 90           ;ecycle<=nMaxCycle, End day (rundart_ecycle)
+
  pltyp           = "x11"           
- ;pltyp@wkWidth   = 1024*2           ;Always needs to be square
- ;pltyp@wkHeight  = 1024*2
 
 ;------------------------------------------------------------------------------
 ;USER SETTINGS END, Do not change below
 ;------------------------------------------------------------------------------
 ;
 ;Debug Messages
- print("Usage: ncl plot_ensemble_ts.ncl ind_aM=X var_id=X nmax=X")
+ print("Usage: ncl plot_ensemble_ts.ncl ind_aM=X var_id=X ")
  dmsg = debugmessage("ind_aM :", assimMode)
  print(" " + dmsg)
  dmsg = debugmessage("var_id :", varnames)
  print(" " + dmsg)
- print("nmax <= 90")
- if (.not.isdefined("ind_aM") .or. .not.isdefined("var_id") .or. .not.isdefined("nmax")) then
+ if (.not.isdefined("ind_aM") .or. .not.isdefined("var_id")) then
    exit
  end if
 ;Debug Messages
 
+ num_lev     = dimsizes(izz)        ;dimsizes(iz),dimsizes(izz),1
 
- nmaxcycle = min((/nmax,nmaxcycle/))
- ncycle    = nmaxcycle - icycle_start + 1 
  scale     = scales(var_id)
  offset    = offsets(var_id)
  varname   = varnames(var_id)
@@ -95,18 +87,24 @@ begin
    sfx_pm    = "OL/NC/rundart"   
  end if
 
+;------------------------------------------------------------------------------
+;Big Loop, ncycle depends on model restarts, where assimilation is done
+;------------------------------------------------------------------------------
+ ncycle = min((/ecycle-scycle+1,nMaxCycle/))
  
- do icycle = icycle_start, nmaxcycle -1          ;Big Loop
+ do icycle = 0,ncycle -1          ;Big Loop
 
-   print(" Day " + icycle)
-   fname    = systemfunc("ls " + path + sfx + sprinti("%0.2i",icycle+1) +"/tsmp_instance*")
+   ocycle   = icycle + scycle
+   ;-------------
+   print(" Day " + ocycle)
+   fname    = systemfunc("ls " + path + sfx + sprinti("%0.2i",ocycle) +"/tsmp_instance*")
    nens     = dimsizes(fname)
  ;
    if (pmID.eq.-1) then
-     fname_pm = path + sfx_pm + sprinti("%0.2i",icycle+1)     ; perfect model
+     fname_pm = path + sfx_pm + sprinti("%0.2i",ocycle)     ; perfect model
      tsmpF_pm = addfile(fname_pm + ".nc","r")
    else
-     fname_pm = path + sfx_pm + sprinti("%0.2i",icycle+1) + "/tsmp_instance_" + sprinti("%0.1i",pmID) 
+     fname_pm = path + sfx_pm + sprinti("%0.2i",ocycle) + "/tsmp_instance_" + sprinti("%0.1i",pmID) 
      tsmpF_pm = addfile(fname_pm + ".nc","r")
    end if
 
@@ -122,7 +120,7 @@ begin
 
    do nf  = 0, nens-1                                 ;Ensemble loop
      tsmpF  = addfile(fname(nf)+".nc","r")
-     if (nf.eq.0 .and. icycle.eq.icycle_start) then
+     if (nf.eq.0 .and. icycle.eq.0) then
        tsmpF0    = addfile(fname(nf)+".nc","r")
        tim_cos   = tsmpF->tim_cos
        hhl       = tsmpF0->zxx_cos(iz,iys,ixs) -140.
@@ -178,8 +176,8 @@ begin
     ;------------------------------
 
      do it = 0, nt_var-1                        ;Local Time Loop
-       xt = it + nt_var*(icycle - icycle_start)
-       time_var(xt) = it*nfreq + nt_var*icycle*nfreq
+       xt = it + nt_var*(icycle)
+       time_var(xt) = it*nfreq + nt_var*ocycle*nfreq
        ;tempvar = scale*(tsmpF->$(varname)$)
        if (strpSuffix.eq."cos") then
          if (varname.eq."qrn_cos") then
@@ -187,7 +185,7 @@ begin
             data_var(nens+nstat-1,:,xt)   = dim_avg_n(dim_avg_n(tsmpF_pm->$(varname)$(it,iys:iye,ixs:ixe),1),0)
             removeaccu = False
             if (removeaccu) then
-            if (it.eq.0 .and. icycle.eq.icycle_start) then
+            if (it.eq.0 .and. icycle.eq.0) then
              ndim               = dimsizes(tsmpF->$(varname)$(it,:,:))
              oldrain            = new((/nens,ndim(0),ndim(1)/),"float")
              nowrain            = new((/nens,ndim(0),ndim(1)/),"float")
