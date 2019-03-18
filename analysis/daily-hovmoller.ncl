@@ -48,11 +48,10 @@ begin
 ;------------------------------------------------------------------------------
 ;
 ;Debug Messages
- print("Usage: ncl plot_ensemble_ts.ncl ind_aM=X var_id=X nmax=X")
+ print("Usage: ncl plot_ensemble_ts.ncl ind_aM=X var_id=X")
  dmsg = debugmessage("ind_aM :", assimMode)
  print(" " + dmsg)
- print("nmax <= 90")
- if (.not.isdefined("ind_aM") .or. .not.isdefined("varname") .or. .not.isdefined("nmax")) then
+ if (.not.isdefined("ind_aM") .or. .not.isdefined("varname")) then
    exit
  end if
 ;Debug Messages
